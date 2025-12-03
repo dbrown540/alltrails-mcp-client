@@ -16,8 +16,12 @@ try:
     
     print("MCP imports successful", file=sys.stderr)
     
-    # Import AllTrails scraper
-    from app.alltrails_scraper import search_trails_in_park, get_trail_by_slug
+    # Import AllTrails scraper (legacy location)
+    # For new installations, use: from alltrails_mcp.scraper import ...
+    try:
+        from app.alltrails_scraper import search_trails_in_park, get_trail_by_slug
+    except ImportError:
+        from alltrails_mcp.scraper import search_trails_in_park, get_trail_by_slug
     print("AllTrails scraper imports successful", file=sys.stderr)
     
     server = Server("alltrails-mcp")

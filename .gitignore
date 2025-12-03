@@ -16,10 +16,17 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyPI
+.pypirc
 
 # Virtual environments
 .env
@@ -57,3 +64,8 @@ config.local.json
 # Test files
 test_*.py
 *_test.py
+
+# Cache database
+trails_cache.db
+*.db
+*.db-journal

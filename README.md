@@ -1,357 +1,203 @@
-# AllTrails MCP Server
+# AllTrails MCP Client
 
-A Model Context Protocol (MCP) server that provides access to AllTrails data, allowing you to search for hiking trails and get detailed trail information directly through Claude Desktop.
+A Model Context Protocol (MCP) server and Python package for searching hiking trails from AllTrails.com. Includes smart caching to avoid rate limiting.
+
+## ⚠️ Important: Rate Limiting
+
+**AllTrails.com implements CAPTCHA and rate limiting.** This package includes a caching system to minimize requests:
+
+- ✅ **Cache-first**: Stores up to 15 trails per park for 7 days
+- 🔄 **Automatic refresh**: Updates cache after expiration
+- 💾 **SQLite storage**: Local database (`trails_cache.db`)
+- 🚫 **Use sparingly**: Best for personal, low-volume usage
 
 ## Features
 
-- 🥾 **Search trails** by national park
-- 📍 **Get detailed trail information** including difficulty, length, elevation gain, and descriptions
-- 🏔️ **Comprehensive trail data** from AllTrails including ratings, route types, and summaries
-- 🤖 **Seamless Client integration** via MCP protocol
+- 🥾 Search trails by US National Park (all 63 parks supported)
+- 📍 Get detailed trail information
+- 💾 Smart caching system (7-day cache)
+- 🤖 MCP server for Claude Desktop integration
+- 🛠️ CLI tools for quick searches
+- 🐍 Python API for programmatic access
 
-## Technical Specifications
+## Installation
 
-### Protocol Support
-
-- **Protocol Version**: MCP 1.9.4
-- **Communication**: Standard input/output (stdio)
-- **Capabilities**: Tools
-- **Server Name**: alltrails-mcp
-- **Server Version**: 0.1.0
-
-## Tools Available
-
-### `search_trails`
-Search for trails in a specific national park using AllTrails data.
-
-**Parameters:**
-- `park` (required): Park slug in format `us/state/park-name` (e.g., `us/tennessee/great-smoky-mountains-national-park`)
-
-### `get_trail_details`
-Get detailed information about a specific trail by its AllTrails slug.
-
-**Parameters:**
-- `slug` (required): Trail slug from AllTrails URL (the part after `/trail/`)
-
-## Installation Options
-
-### Option 1: With Virtual Environment (Recommended)
-
-This approach isolates dependencies and prevents conflicts with other Python projects.
-
-### 1. Clone the Repository
-
-```
-git clone <your-repo-url>
-cd alltrails_mcp
+### From PyPI (when published)
+```bash
+pip install alltrails-mcp
 ```
 
-### 2. Create Virtual Environment
-
-```
-python3 -m venv alltrails_mcp_venv
-source alltrails_mcp_venv/bin/activate  # On Windows: alltrails_mcp_venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-
-```
-pip install -r requirements.txt
+### Development Install
+```bash
+git clone https://github.com/dbrown540/alltrails-mcp-client.git
+cd alltrails-mcp-client
+pip install -e .
 ```
 
-### 4. Verify Installation
+## Quick Start
 
-Test that the server starts without errors:
+### Python API
+```python
+from alltrails_mcp import NationalPark, search_trails_with_cache
 
-```
-python3 server.py
-```
+# Search with automatic caching
+trails = search_trails_with_cache(NationalPark.YOSEMITE.value)
 
-You should see the server start without crashing. Press Ctrl+C to stop.
-
-## Prerequisites
-
-- Python 3.8 or higher
-- This server can be used with any MCP-compatible client. I use Claude Desktop with Pro subscription.
-- macOS (tested) or other Unix-like system
-
----
-
-### Option 2: With System Python
-
-If you prefer not to use a virtual environment, you can install dependencies globally.
-
-### 1. Clone the Repository
-
-```
-git clone <your-repo-url>
-cd alltrails_mcp
+for trail in trails[:5]:
+    print(f"{trail['name']} - {trail['difficulty']} - {trail['length']}")
 ```
 
-### 2. Install Dependencies Globally
+### CLI
+```bash
+# Search trails
+alltrails-search search us/california/yosemite-national-park --limit 5
 
-```
-pip install -r requirements.txt
-```
-
-### 3. Verify Installation
-
-Test that the server starts without errors:
-
-```
-python3 server.py
+# Get trail details
+alltrails-search details us/california/half-dome-trail
 ```
 
-You should see the server start without crashing. Press Ctrl+C to stop.
+### MCP Server (Claude Desktop)
 
-## Claude Desktop Configuration
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
-### 1. Locate Claude Desktop Config
-
-Find your Claude Desktop configuration file:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-If it doesn't exist, create a json file named claude_desktop_config.json in the above directory.
-
-### 2. Add MCP Server Configuration
-
-Add the following to your `claude_desktop_config.json` file:
-
-#### Option A: Using Virtual Environment (Recommended)
 ```json
 {
   "mcpServers": {
-    "alltrails_mcp_server": {
-      "command": "/path/to/your/alltrails_mcp/alltrails_mcp_venv/bin/python3",
-      "args": ["/path/to/your/alltrails_mcp/server.py"]
+    "alltrails": {
+      "command": "/path/to/.venv/bin/python",
+      "args": ["/path/to/alltrails-mcp-client/src/alltrails_mcp/server.py"]
     }
   }
 }
 ```
 
-#### Option B: Using System Python
-```json
-{
-  "mcpServers": {
-    "alltrails_mcp_server": {
-      "command": "python3",
-      "args": ["/path/to/your/alltrails_mcp/server.py"]
-    }
-  }
-}
+Then ask Claude: "Find trails in Yosemite National Park"
+
+## National Parks
+
+All 63 US National Parks are available via the `NationalPark` enum:
+
+```python
+from alltrails_mcp import NationalPark, get_park_slug, list_parks
+
+# Use enum
+park = NationalPark.YOSEMITE
+slug = park.value  # 'us/california/yosemite-national-park'
+
+# Look up by name
+slug = get_park_slug("Yellowstone")
+
+# List all parks
+all_parks = list_parks()
 ```
 
-**Or with absolute Python path:**
-```json
-{
-  "mcpServers": {
-    "alltrails_mcp_server": {
-      "command": "/usr/bin/python3",
-      "args": ["/path/to/your/alltrails_mcp/server.py"]
-    }
-  }
-}
+See `PARKS_SUMMARY.md` for complete list.
+
+## Cache Management
+
+```python
+from alltrails_mcp import TrailCache
+
+cache = TrailCache()
+
+# Get cache info
+info = cache.get_cache_info()
+print(f"Parks cached: {info['total_parks']}")
+
+# Clear specific park
+cache.clear_cache("us/california/yosemite-national-park")
+
+# Clear entire cache
+cache.clear_cache()
+
+# Force refresh (bypass cache)
+from alltrails_mcp import search_trails_with_cache
+trails = search_trails_with_cache(park_slug, force_refresh=True)
 ```
 
-**Important:** Replace `/path/to/your/alltrails_mcp` with the actual absolute path to your project directory.
+Cache location: `./trails_cache.db` (in current directory)
 
-#### Other MCP Clients
+## Examples
 
-For other MCP-compatible clients, refer to their documentation for server configuration. The server implements the standard MCP protocol and should work with any compliant client.
+See the `examples/` directory:
+- `demo.py` - Simple demonstration of key features
 
-**Server Command:** `python3 server.py`  
-**Communication:** Standard input/output (stdio)  
-**Protocol Version:** MCP 1.9.4
-
-### 3. Find Your Python Path
-
-#### For Virtual Environment Users:
-```
-cd /path/to/your/alltrails_mcp
-source alltrails_mcp_venv/bin/activate
-which python3
-```
-
-#### For System Python Users:
-```
-which python3
-```
-
-Use the output path in your configuration.
-
-### 4. Install Dependencies
-
-#### If Using Virtual Environment:
-Dependencies are already installed in your virtual environment from step 3.
-
-#### If Using System Python:
-Install dependencies globally:
-```
-pip install -r requirements.txt
-```
-
-### 5. Restart Claude Desktop
-
-Completely quit and restart Claude Desktop for the changes to take effect.
-
-## Usage Examples
-
-Once configured, you can use these commands in Claude Desktop:
-
-### Search for Trails
-
-**By park name:**
-```
-Find trails in Great Smoky Mountains National Park
-```
-
-**By location:**
-```
-What are the best hiking trails in Yosemite?
-```
-
-**With specific criteria:**
-```
-Show me moderate difficulty trails in Yellowstone
-```
-
-**Using park slugs directly:**
-```
-Search for trails in us/california/yosemite-national-park
-```
-
-**For specific activities:**
-```
-Find family-friendly trails in Zion National Park
-```
-
-### Get Trail Details
-
-**By trail name:**
-```
-Get details for Alum Cave Trail to Mount LeConte
-```
-
-**Using trail slugs:**
-```
-Get details for trail us/tennessee/alum-cave-trail-to-mount-leconte
-```
-
-**For planning purposes:**
-```
-I need detailed information about Rainbow Falls Trail including difficulty and elevation
-```
-
-### Combination Queries
-
-**Search and get details:**
-```
-Find the most popular trails in Grand Canyon National Park and give me details about the top rated one
-```
-
-**Compare trails:**
-```
-Search for trails in Great Smoky Mountains and tell me which ones are best for beginners
-```
-
-**Trip planning:**
-```
-I'm visiting Yellowstone for 3 days. Find me a mix of easy and moderate trails with good views
-```
-
-### Natural Language Examples
-
-The MCP server works with natural language, so you can ask questions like:
-
-- "What are some good day hikes in the Smoky Mountains?"
-- "Find me a challenging trail with waterfalls in Tennessee"
-- "I want to hike to a summit with 360-degree views"
-- "Show me trails that are good for photography"
-- "Find dog-friendly trails in national parks"
-- "What's the difficulty level of Charlies Bunion trail?"
-
-### Common Park Slugs
-- Great Smoky Mountains: `us/tennessee/great-smoky-mountains-national-park`
-- Yosemite: `us/california/yosemite-national-park`
-- Yellowstone: `us/wyoming/yellowstone-national-park`
-- Grand Canyon: `us/arizona/grand-canyon-national-park`
-- Zion: `us/utah/zion-national-park`
-
-## Troubleshooting
-
-### Server Not Connecting
-
-1. **Check the logs:**
-   ```bash
-   tail -f ~/Library/Logs/Claude/mcp.log
-   ```
-
-2. **Verify your config file:**
-   ```bash
-   cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
-   ```
-
-3. **Test the server manually:**
-   ```bash
-   cd /path/to/your/alltrails_mcp
-   source alltrails_mcp_venv/bin/activate
-   python3 server.py
-   ```
-
-### Common Issues
-
-- **"Connection closed" errors**: Usually indicates a Python path or virtual environment issue
-### **Path configuration issues**: Check that all paths in the config are absolute and correct
-- **Import errors**: Ensure all dependencies are installed in the correct Python environment (virtual environment vs system Python)
-- **Python path errors**: Use `which python3` or `which python` to verify the correct Python executable path
-
-### Debug Mode
-
-For detailed debugging, check the MCP logs:
-
-```
-# macOS
-tail -f ~/Library/Logs/Claude/mcp.log
-
-# The server also outputs debug information to stderr
+Run with:
+```bash
+python examples/demo.py --park ZION
+python examples/demo.py --stats
+python examples/demo.py --clear-cache
 ```
 
 ## Project Structure
 
 ```
-alltrails_mcp/
-├── app/
-│   └── alltrails_scraper.py    # AllTrails scraping logic
-├── examples/
-│   └── claude_desktop_config.json  # Example configuration file for Claude Desktop
-├── server.py                   # MCP server implementation
-├── requirements.txt            # Python dependencies
-├── alltrails_mcp_venv/         # Virtual environment
-└── README.md                   # This file
-└── .gitignore                  # Git ignore file
+alltrails-mcp-client/
+├── src/alltrails_mcp/      # Main package
+│   ├── __init__.py          # Package exports
+│   ├── scraper.py           # AllTrails scraping logic
+│   ├── cache.py             # SQLite caching system
+│   ├── parks.py             # National Park enums
+│   ├── server.py            # MCP server
+│   └── cli.py               # Command-line interface
+├── examples/                # Example scripts
+├── pyproject.toml          # Package configuration
+└── README.md               # This file
 ```
 
-## How It Works
+## API Reference
 
-1. **MCP Protocol**: Uses the Model Context Protocol to communicate with Claude Desktop
-2. **Web Scraping**: Scrapes AllTrails website for trail data using BeautifulSoup
-3. **Data Processing**: Formats and returns trail information in a structured format
-4. **Tool Integration**: Exposes tools that Claude can call to search and retrieve trail data
+### Core Functions
 
+**`search_trails_in_park(park_slug: str) -> List[Dict]`**
+- Search for trails (no caching)
+- Returns: List of trail dictionaries
+
+**`search_trails_with_cache(park_slug: str, cache=None, force_refresh=False, limit=15) -> List[Dict]`**
+- Search with automatic caching
+- Returns cached data if valid (<7 days old)
+
+**`get_trail_by_slug(slug: str) -> Dict`**
+- Get detailed trail information
+- Example slug: `us/tennessee/alum-cave-trail`
+
+### Trail Dictionary Format
+
+```python
+{
+    "name": "Half Dome Trail",
+    "url": "https://www.alltrails.com/trail/...",
+    "summary": "Experience this 14.2-mile...",
+    "difficulty": "Hard",
+    "length": "14.2 mi",
+    "rating": "4.8"
+}
+```
+
+## Publishing to PyPI
+
+See `PUBLISHING.md` for detailed instructions.
+
+Quick steps:
+```bash
+# Build
+python -m build
+
+# Upload
+twine upload dist/*
+```
 
 ## License
 
-MIT License
-
-Copyright (c) 2025 Srinath Srinivasan
+MIT License - See LICENSE.md
 
 ## Acknowledgments
 
-- Built using the [Model Context Protocol](https://modelcontextprotocol.io/)
-- Trail data sourced from [AllTrails](https://www.alltrails.com/)
-- Inspired by the MCP community examples
+- Original MCP server by Srinath Srinivasan
+- Forked and enhanced by Danny Brown
+- Trail data from [AllTrails](https://www.alltrails.com/)
+- Built with [Model Context Protocol](https://modelcontextprotocol.io/)
 
----
+## Disclaimer
 
-**Note:** This tool scrapes publicly available data from AllTrails. Please use responsibly and in accordance with AllTrails' terms of service.
+This tool scrapes publicly available data from AllTrails. Use responsibly and respect AllTrails' terms of service. The caching system helps minimize requests.

@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alltrails-mcp"
+version = "0.1.0"
+description = "A Model Context Protocol (MCP) server for accessing AllTrails hiking trail data"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "Srinath Srinivasan"},
+    {name = "Danny Brown", email = "dannybrown540@live.com"}
+]
+keywords = ["alltrails", "hiking", "trails", "mcp", "model-context-protocol", "scraper"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dbrown540/alltrails-mcp-client"
+Repository = "https://github.com/dbrown540/alltrails-mcp-client"
+Issues = "https://github.com/dbrown540/alltrails-mcp-client/issues"
+
+[project.scripts]
+alltrails-mcp = "alltrails_mcp.server:main"
+alltrails-search = "alltrails_mcp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["alltrails_mcp*"]
+
+[tool.setuptools.package-data]
+alltrails_mcp = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import time
 import logging
 from typing import List, Dict, Optional
 import re
@@ -40,6 +39,9 @@ def extract_distance_and_rating(text: str) -> tuple[Optional[str], Optional[str]
 def search_trails_in_park(park_slug: str) -> List[Dict]:
     """
     Search for trails in a specific park.
+    
+    WARNING: AllTrails implements CAPTCHA and rate limiting. Use sparingly with delays
+    between requests to avoid triggering anti-bot protection (403 errors).
     
     Args:
         park_slug: Park identifier (e.g., 'us/tennessee/great-smoky-mountains-national-park')
@@ -180,6 +182,9 @@ def search_trails_in_park(park_slug: str) -> List[Dict]:
 def get_trail_by_slug(slug: str) -> Dict:
     """
     Get detailed information about a specific trail.
+    
+    WARNING: AllTrails implements CAPTCHA and rate limiting. Use sparingly with delays
+    between requests to avoid triggering anti-bot protection (403 errors).
     
     Args:
         slug: Trail slug from AllTrails URL
