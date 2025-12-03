@@ -74,6 +74,12 @@ twine upload dist/*
 
 ## Version History
 
+### 0.1.5 (2025-12-02)
+- Added: `list_parks` MCP tool - Claude can discover all 63 available parks
+- Added: Park name resolution - accepts "Yosemite" instead of full slugs
+- Improved: Better error handling with try-except fallback for unknown parks
+- Improved: MCP server now deterministic - no guessing required
+
 ### 0.1.4 (2025-12-02)
 - Fixed: Cache now uses user home directory (`~/.cache/alltrails-mcp/`)
 - Fixed: Cache is now globally available across all projects

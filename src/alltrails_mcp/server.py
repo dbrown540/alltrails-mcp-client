@@ -23,6 +23,7 @@ try:
         from alltrails_mcp.scraper import get_trail_by_slug
     
     from alltrails_mcp.cache import TrailCache, search_trails_with_cache
+    from alltrails_mcp.parks import get_park_slug, list_parks
     print("AllTrails scraper and cache imports successful", file=sys.stderr)
     
     # Initialize cache
@@ -42,7 +43,7 @@ try:
                     "properties": {
                         "park": {
                             "type": "string",
-                            "description": "Park slug in format 'us/state/park-name' (e.g., 'us/tennessee/great-smoky-mountains-national-park')"
+                            "description": "Park name (e.g., 'Yosemite', 'Grand Canyon') or slug in format 'us/state/park-name' (e.g., 'us/tennessee/great-smoky-mountains-national-park')"
                         }
                     },
                     "required": ["park"]
@@ -61,6 +62,15 @@ try:
                     },
                     "required": ["slug"]
                 }
+            ),
+            types.Tool(
+                name="list_parks",
+                description="List all available US National Parks with their names and slugs. Use this to discover valid park names before searching for trails.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
             )
         ]
     
@@ -74,21 +84,28 @@ try:
                 if not park:
                     return [types.TextContent(type="text", text="Park parameter is required")]
                 
-                print(f"Searching trails for park: {park} (using cache)", file=sys.stderr)
+                # Try to resolve park name to slug (supports both names and slugs)
+                try:
+                    park_slug = get_park_slug(park)
+                    print(f"Searching trails for park: {park} -> {park_slug} (using cache)", file=sys.stderr)
+                except ValueError:
+                    # If not a known park name, assume it's a slug and try it directly
+                    park_slug = park
+                    print(f"Searching trails for park: {park} (as slug, using cache)", file=sys.stderr)
                 
                 # Check if cached before fetching
-                cached_trails = cache.get_cached_trails(park)
+                cached_trails = cache.get_cached_trails(park_slug)
                 if cached_trails:
                     print(f"✓ Cache HIT - returning {len(cached_trails)} cached trails", file=sys.stderr)
                     trails = cached_trails
                 else:
                     print(f"✗ Cache MISS - fetching from AllTrails", file=sys.stderr)
-                    trails = search_trails_with_cache(park, cache=cache, limit=15)
+                    trails = search_trails_with_cache(park_slug, cache=cache, limit=15)
                 
                 if not trails:
                     return [types.TextContent(
                         type="text",
-                        text=f"No trails found for park: {park}. Please check the park slug format."
+                        text=f"No trails found for park: {park}. Please check the park name or slug format."
                     )]
                 
                 response = f"Found {len(trails)} trails in {park}:\n\n"
@@ -104,6 +121,21 @@ try:
                         summary = trail['summary'][:80] + "..." if len(trail['summary']) > 80 else trail['summary']
                         response += f"   - Summary: {summary}\n"
                     response += f"   - URL: {trail['url']}\n\n"
+                
+                return [types.TextContent(type="text", text=response)]
+            
+            elif name == "list_parks":
+                print("Listing all available parks", file=sys.stderr)
+                parks = list_parks()
+                
+                response = "# Available US National Parks\n\n"
+                response += f"Total: {len(parks)} parks\n\n"
+                
+                for park_name, slug in sorted(parks.items()):
+                    # Format enum name to title case
+                    display_name = park_name.replace('_', ' ').title()
+                    response += f"- **{display_name}**\n"
+                    response += f"  - Slug: `{slug}`\n"
                 
                 return [types.TextContent(type="text", text=response)]
             
