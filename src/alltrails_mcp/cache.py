@@ -2,17 +2,21 @@
 Trail data caching module using SQLite.
 
 Caches trail search results to minimize requests to AllTrails and avoid rate limiting.
-Cache expires after 7 days.
+Cache expires after 7 days by default (configurable via ALLTRAILS_CACHE_DAYS env var).
 """
 
 import sqlite3
 import json
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Default cache expiration in days (can be overridden by environment variable)
+DEFAULT_CACHE_DAYS = int(os.getenv('ALLTRAILS_CACHE_DAYS', '7'))
 
 # Default cache location - in user's home directory cache folder
 # This follows XDG Base Directory specification on Linux/macOS
@@ -29,12 +33,51 @@ def _get_default_cache_dir() -> Path:
     return cache_dir
 
 DEFAULT_CACHE_DB = _get_default_cache_dir() / "trails_cache.db"
+CONFIG_FILE = _get_default_cache_dir() / "config.json"
+
+
+def _load_config() -> Dict:
+    """Load configuration from config file."""
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            logger.warning(f"Failed to load config from {CONFIG_FILE}")
+    return {}
+
+
+def _save_config(config: Dict) -> None:
+    """Save configuration to config file."""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=2)
+    except IOError as e:
+        logger.error(f"Failed to save config to {CONFIG_FILE}: {e}")
+
+
+def get_cache_days() -> int:
+    """Get the cache expiration days from config file or environment variable or default."""
+    # Priority: 1. Environment variable, 2. Config file, 3. Default
+    env_cache_days = os.getenv('ALLTRAILS_CACHE_DAYS')
+    if env_cache_days:
+        return int(env_cache_days)
+    
+    config = _load_config()
+    return config.get('cache_days', DEFAULT_CACHE_DAYS)
+
+
+def set_cache_days(days: int) -> None:
+    """Set the cache expiration days in the config file."""
+    config = _load_config()
+    config['cache_days'] = days
+    _save_config(config)
 
 
 class TrailCache:
     """Manages cached trail data in SQLite database."""
     
-    def __init__(self, db_path: Optional[Path] = None, cache_days: int = 7):
+    def __init__(self, db_path: Optional[Path] = None, cache_days: Optional[int] = None):
         """
         Initialize the trail cache.
         
@@ -42,10 +85,11 @@ class TrailCache:
             db_path: Path to SQLite database file. Defaults to:
                      - Linux/macOS: ~/.cache/alltrails-mcp/trails_cache.db
                      - Fallback: ~/.alltrails_mcp/trails_cache.db
-            cache_days: Number of days before cache expires (default: 7)
+            cache_days: Number of days before cache expires. 
+                       Defaults to saved config, ALLTRAILS_CACHE_DAYS env var, or 7 days.
         """
         self.db_path = db_path or DEFAULT_CACHE_DB
-        self.cache_days = cache_days
+        self.cache_days = cache_days if cache_days is not None else get_cache_days()
         self._ensure_db_exists()
     
     def _ensure_db_exists(self):

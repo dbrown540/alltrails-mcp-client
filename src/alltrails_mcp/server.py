@@ -17,10 +17,8 @@ try:
     print("MCP imports successful", file=sys.stderr)
     
     # Import AllTrails scraper and cache
-    try:
-        from app.alltrails_scraper import get_trail_by_slug
-    except ImportError:
-        from alltrails_mcp.scraper import get_trail_by_slug
+
+    from alltrails_mcp.scraper import get_trail_by_slug
     
     from alltrails_mcp.cache import TrailCache, search_trails_with_cache
     from alltrails_mcp.parks import get_park_slug, list_parks
@@ -99,7 +97,7 @@ try:
                     print(f"✓ Cache HIT - returning {len(cached_trails)} cached trails", file=sys.stderr)
                     trails = cached_trails
                 else:
-                    print(f"✗ Cache MISS - fetching from AllTrails", file=sys.stderr)
+                    print("✗ Cache MISS - fetching from AllTrails", file=sys.stderr)
                     trails = search_trails_with_cache(park_slug, cache=cache, limit=15)
                 
                 if not trails:

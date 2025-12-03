@@ -9,7 +9,7 @@ import argparse
 import logging
 
 from alltrails_mcp.scraper import search_trails_in_park, get_trail_by_slug
-from alltrails_mcp.cache import TrailCache, search_trails_with_cache
+from alltrails_mcp.cache import TrailCache, search_trails_with_cache, get_cache_days, set_cache_days, CONFIG_FILE
 
 
 def setup_logging(verbose: bool = False):
@@ -138,6 +138,29 @@ def cache_command(args):
     return 0
 
 
+def config_command(args):
+    """Handle the config command."""
+    if args.set_cache_days is not None:
+        if args.set_cache_days < 1:
+            print("❌ Cache days must be at least 1")
+            return 1
+        
+        set_cache_days(args.set_cache_days)
+        print(f"✅ Cache expiration set to {args.set_cache_days} days")
+        print(f"📍 Configuration saved to: {CONFIG_FILE}")
+        return 0
+    
+    # Show current configuration
+    cache_days = get_cache_days()
+    print(f"\n{'='*80}")
+    print("⚙️  Configuration")
+    print(f"{'='*80}\n")
+    print(f"📍 Config File: {CONFIG_FILE}")
+    print(f"⏰ Cache Expiration: {cache_days} days\n")
+    
+    return 0
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -162,6 +185,12 @@ Examples:
   
   # Clear the cache
   alltrails-search cache --clear
+  
+  # View current configuration
+  alltrails-search config
+  
+  # Set cache expiration to 14 days
+  alltrails-search config --set-cache-days 14
 """
     )
     
@@ -229,6 +258,18 @@ Examples:
         help='Clear the entire cache'
     )
     
+    # Config command
+    config_parser = subparsers.add_parser(
+        'config',
+        help='View or modify configuration settings'
+    )
+    config_parser.add_argument(
+        '--set-cache-days',
+        type=int,
+        metavar='DAYS',
+        help='Set cache expiration in days (e.g., --set-cache-days 14)'
+    )
+    
     args = parser.parse_args()
     
     # Set up logging
@@ -241,6 +282,8 @@ Examples:
         return details_command(args)
     elif args.command == 'cache':
         return cache_command(args)
+    elif args.command == 'config':
+        return config_command(args)
     else:
         parser.print_help()
         return 1

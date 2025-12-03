@@ -60,6 +60,12 @@ alltrails-search cache
 
 # Clear the cache
 alltrails-search cache --clear
+
+# View current configuration
+alltrails-search config
+
+# Set cache expiration to 14 days
+alltrails-search config --set-cache-days 14
 ```
 
 ### MCP Server (Claude Desktop)
@@ -71,11 +77,17 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "alltrails": {
       "command": "/path/to/.venv/bin/python",
-      "args": ["/path/to/alltrails-mcp-client/src/alltrails_mcp/server.py"]
+      "args": ["/path/to/alltrails-mcp-client/src/alltrails_mcp/server.py"],
+      "env": {
+        "ALLTRAILS_CACHE_DAYS": "14"
+      }
     }
   }
 }
 ```
+
+**Optional environment variables:**
+- `ALLTRAILS_CACHE_DAYS`: Cache expiration in days (default: 7)
 
 Then ask Claude: "Find trails in Yosemite National Park"
 
@@ -123,6 +135,9 @@ trails = search_trails_with_cache(park_slug, force_refresh=True)
 # Use custom cache location
 from pathlib import Path
 custom_cache = TrailCache(db_path=Path("/custom/path/cache.db"))
+
+# Use custom cache expiration (e.g., 14 days)
+custom_cache = TrailCache(cache_days=14)
 ```
 
 **Cache Location:**
@@ -130,7 +145,29 @@ custom_cache = TrailCache(db_path=Path("/custom/path/cache.db"))
 - Fallback: `~/.alltrails_mcp/trails_cache.db`
 - Custom: Pass `db_path` to `TrailCache()`
 
-The cache is **automatically managed** - users don't need to interact with it directly unless they want to clear it or customize the location.
+**Cache Expiration Configuration:**
+
+Cache expiration can be configured in multiple ways with the following priority:
+
+1. **Programmatic** (highest priority): Pass `cache_days=14` to `TrailCache()`
+2. **Environment variable**: Set `ALLTRAILS_CACHE_DAYS=14`
+3. **Saved configuration**: Use CLI command `alltrails-search config --set-cache-days 14`
+4. **Default**: 7 days
+
+```bash
+# Set cache expiration persistently via CLI
+alltrails-search config --set-cache-days 14
+
+# View current configuration
+alltrails-search config
+
+# Override via environment variable
+export ALLTRAILS_CACHE_DAYS=30
+```
+
+Configuration is saved to `~/.cache/alltrails-mcp/config.json` and persists across sessions.
+
+The cache is **automatically managed** - users don't need to interact with it directly unless they want to clear it or customize the location/expiration.
 
 ## Examples
 

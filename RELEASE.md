@@ -74,6 +74,13 @@ twine upload dist/*
 
 ## Version History
 
+### 0.1.6 (2025-12-02)
+- Added: `alltrails-search config` command to view configuration
+- Added: `alltrails-search config --set-cache-days <days>` to set cache expiration
+- Added: Persistent configuration saved to `~/.cache/alltrails-mcp/config.json`
+- Improved: Cache expiration now configurable via CLI, env var, or programmatic parameter
+- Improved: Configuration priority: programmatic > environment > saved config > default
+
 ### 0.1.5 (2025-12-02)
 - Added: `list_parks` MCP tool - Claude can discover all 63 available parks
 - Added: Park name resolution - accepts "Yosemite" instead of full slugs
