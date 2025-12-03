@@ -13,7 +13,7 @@
 - ✅ `server.py` - MCP server with cache integration (7.5KB)
 - ✅ `cli.py` - CLI with cache support (5.8KB)
 - ✅ `scraper.py` - AllTrails scraper
-- ✅ `parks.py` - All 63 National Parks
+- ✅ `parks.py` - All 63 National Parks 
 
 ### GitHub Actions Workflow
 
