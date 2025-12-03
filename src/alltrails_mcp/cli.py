@@ -9,6 +9,7 @@ import argparse
 import logging
 
 from alltrails_mcp.scraper import search_trails_in_park, get_trail_by_slug
+from alltrails_mcp.cache import TrailCache, search_trails_with_cache
 
 
 def setup_logging(verbose: bool = False):
@@ -24,9 +25,21 @@ def search_command(args):
     """Handle the search command."""
     print(f"\n{'='*80}")
     print(f"Searching for trails in: {args.park}")
+    if not args.no_cache:
+        print("Using cache (use --no-cache to bypass)")
     print(f"{'='*80}\n")
     
-    trails = search_trails_in_park(args.park)
+    # Use cache by default unless --no-cache is specified
+    if args.no_cache:
+        trails = search_trails_in_park(args.park)
+    else:
+        cache = TrailCache()
+        trails = search_trails_with_cache(
+            args.park, 
+            cache=cache, 
+            force_refresh=args.force_refresh,
+            limit=15
+        )
     
     if not trails:
         print("❌ No trails found. Please check the park slug format.")
@@ -143,6 +156,16 @@ Examples:
         '--show-summary',
         action='store_true',
         help='Display trail summaries'
+    )
+    search_parser.add_argument(
+        '--no-cache',
+        action='store_true',
+        help='Bypass cache and fetch fresh data'
+    )
+    search_parser.add_argument(
+        '--force-refresh',
+        action='store_true',
+        help='Force refresh cached data (fetch new and update cache)'
     )
     
     # Details command

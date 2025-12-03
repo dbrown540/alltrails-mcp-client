@@ -16,13 +16,17 @@ try:
     
     print("MCP imports successful", file=sys.stderr)
     
-    # Import AllTrails scraper (legacy location)
-    # For new installations, use: from alltrails_mcp.scraper import ...
+    # Import AllTrails scraper and cache
     try:
-        from app.alltrails_scraper import search_trails_in_park, get_trail_by_slug
+        from app.alltrails_scraper import get_trail_by_slug
     except ImportError:
-        from alltrails_mcp.scraper import search_trails_in_park, get_trail_by_slug
-    print("AllTrails scraper imports successful", file=sys.stderr)
+        from alltrails_mcp.scraper import get_trail_by_slug
+    
+    from alltrails_mcp.cache import TrailCache, search_trails_with_cache
+    print("AllTrails scraper and cache imports successful", file=sys.stderr)
+    
+    # Initialize cache
+    cache = TrailCache()
     
     server = Server("alltrails-mcp")
     
@@ -70,8 +74,16 @@ try:
                 if not park:
                     return [types.TextContent(type="text", text="Park parameter is required")]
                 
-                print(f"Searching trails for park: {park}", file=sys.stderr)
-                trails = search_trails_in_park(park)
+                print(f"Searching trails for park: {park} (using cache)", file=sys.stderr)
+                
+                # Check if cached before fetching
+                cached_trails = cache.get_cached_trails(park)
+                if cached_trails:
+                    print(f"✓ Cache HIT - returning {len(cached_trails)} cached trails", file=sys.stderr)
+                    trails = cached_trails
+                else:
+                    print(f"✗ Cache MISS - fetching from AllTrails", file=sys.stderr)
+                    trails = search_trails_with_cache(park, cache=cache, limit=15)
                 
                 if not trails:
                     return [types.TextContent(
@@ -80,7 +92,7 @@ try:
                     )]
                 
                 response = f"Found {len(trails)} trails in {park}:\n\n"
-                for i, trail in enumerate(trails[:15], 1):  # Limit to top 15 trails
+                for i, trail in enumerate(trails, 1):
                     response += f"{i}. **{trail['name']}**\n"
                     if trail.get('difficulty'):
                         response += f"   - Difficulty: {trail['difficulty']}\n"
@@ -92,9 +104,6 @@ try:
                         summary = trail['summary'][:80] + "..." if len(trail['summary']) > 80 else trail['summary']
                         response += f"   - Summary: {summary}\n"
                     response += f"   - URL: {trail['url']}\n\n"
-                
-                if len(trails) > 15:
-                    response += f"... and {len(trails) - 15} more trails."
                 
                 return [types.TextContent(type="text", text=response)]
             
