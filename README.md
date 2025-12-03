@@ -54,6 +54,12 @@ alltrails-search search us/california/yosemite-national-park --limit 5
 
 # Get trail details
 alltrails-search details us/california/half-dome-trail
+
+# Show cache info and location
+alltrails-search cache
+
+# Clear the cache
+alltrails-search cache --clear
 ```
 
 ### MCP Server (Claude Desktop)
@@ -113,9 +119,18 @@ cache.clear_cache()
 # Force refresh (bypass cache)
 from alltrails_mcp import search_trails_with_cache
 trails = search_trails_with_cache(park_slug, force_refresh=True)
+
+# Use custom cache location
+from pathlib import Path
+custom_cache = TrailCache(db_path=Path("/custom/path/cache.db"))
 ```
 
-Cache location: `./trails_cache.db` (in current directory)
+**Cache Location:**
+- Linux/macOS: `~/.cache/alltrails-mcp/trails_cache.db`
+- Fallback: `~/.alltrails_mcp/trails_cache.db`
+- Custom: Pass `db_path` to `TrailCache()`
+
+The cache is **automatically managed** - users don't need to interact with it directly unless they want to clear it or customize the location.
 
 ## Examples
 

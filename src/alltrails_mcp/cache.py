@@ -14,8 +14,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Default cache location - in current working directory
-DEFAULT_CACHE_DB = Path.cwd() / "trails_cache.db"
+# Default cache location - in user's home directory cache folder
+# This follows XDG Base Directory specification on Linux/macOS
+def _get_default_cache_dir() -> Path:
+    """Get the default cache directory for the current platform."""
+    if Path.home().joinpath(".cache").exists():
+        # Linux/macOS with XDG
+        cache_dir = Path.home() / ".cache" / "alltrails-mcp"
+    else:
+        # Fallback for systems without .cache
+        cache_dir = Path.home() / ".alltrails_mcp"
+    
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+DEFAULT_CACHE_DB = _get_default_cache_dir() / "trails_cache.db"
 
 
 class TrailCache:
@@ -26,7 +39,9 @@ class TrailCache:
         Initialize the trail cache.
         
         Args:
-            db_path: Path to SQLite database file. Defaults to ~/.alltrails_mcp/trails_cache.db
+            db_path: Path to SQLite database file. Defaults to:
+                     - Linux/macOS: ~/.cache/alltrails-mcp/trails_cache.db
+                     - Fallback: ~/.alltrails_mcp/trails_cache.db
             cache_days: Number of days before cache expires (default: 7)
         """
         self.db_path = db_path or DEFAULT_CACHE_DB

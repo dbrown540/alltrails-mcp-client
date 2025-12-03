@@ -104,6 +104,40 @@ def details_command(args):
     return 0
 
 
+def cache_command(args):
+    """Handle the cache command."""
+    cache = TrailCache()
+    
+    if args.clear:
+        print("🗑️  Clearing cache...")
+        cache.clear_cache()
+        print("✅ Cache cleared successfully!")
+        return 0
+    
+    # Show cache info
+    info = cache.get_cache_info()
+    
+    print(f"\n{'='*80}")
+    print("📦 Cache Information")
+    print(f"{'='*80}\n")
+    print(f"📍 Location: {info['db_path']}")
+    print(f"⏰ Cache Expiration: {info['cache_days']} days")
+    print(f"🏞️  Parks Cached: {info['total_parks']}")
+    print(f"🥾 Total Trails: {info['total_trails']}\n")
+    
+    if info['parks']:
+        print(f"{'Park':<50} {'Trails':<10} {'Age (days)':<12} {'Status'}")
+        print(f"{'-'*50} {'-'*10} {'-'*12} {'-'*10}")
+        for park in info['parks']:
+            status = "❌ Expired" if park['is_expired'] else "✅ Valid"
+            print(f"{park['park_slug']:<50} {park['trail_count']:<10} {park['cache_age_days']:<12} {status}")
+    else:
+        print("No parks cached yet.")
+    
+    print()
+    return 0
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -122,6 +156,12 @@ Examples:
   
   # Get details about a specific trail
   alltrails-search details us/tennessee/alum-cave-trail-to-mount-leconte
+  
+  # Show cache information
+  alltrails-search cache
+  
+  # Clear the cache
+  alltrails-search cache --clear
 """
     )
     
@@ -178,6 +218,17 @@ Examples:
         help="Trail slug (e.g., 'us/tennessee/alum-cave-trail-to-mount-leconte')"
     )
     
+    # Cache command
+    cache_parser = subparsers.add_parser(
+        'cache',
+        help='Show cache information and location'
+    )
+    cache_parser.add_argument(
+        '--clear',
+        action='store_true',
+        help='Clear the entire cache'
+    )
+    
     args = parser.parse_args()
     
     # Set up logging
@@ -188,6 +239,8 @@ Examples:
         return search_command(args)
     elif args.command == 'details':
         return details_command(args)
+    elif args.command == 'cache':
+        return cache_command(args)
     else:
         parser.print_help()
         return 1

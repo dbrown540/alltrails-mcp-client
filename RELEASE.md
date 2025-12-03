@@ -74,6 +74,19 @@ twine upload dist/*
 
 ## Version History
 
+### 0.1.4 (2025-12-02)
+- Fixed: Cache now uses user home directory (`~/.cache/alltrails-mcp/`)
+- Fixed: Cache is now globally available across all projects
+- Added: `alltrails-search cache` command to view cache location and stats
+- Added: `alltrails-search cache --clear` to clear cache
+- Improved: Platform-aware cache location (XDG Base Directory spec)
+
+### 0.1.3 (2025-12-02)
+- Internal version (skipped)
+
+### 0.1.2 (2025-12-02)
+- Internal version (skipped)
+
 ### 0.1.1 (2025-12-02)
 - Fixed: MCP server now uses SQLite cache
 - Fixed: CLI uses cache by default
